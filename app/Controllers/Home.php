@@ -16,18 +16,18 @@ class Home extends ResourceController
 
     public function index()
     {
-        $restult = $this->db->query("select * from firma")->getResult();
+        $restult = $this->db->query("select * from firma where id = 2")->getResult();
         $final = array();
         
         foreach($restult as $single_firm){
-            #Fontes de anos
+            #Years
             $single_firm->years = $this->db
                 ->query("SELECT * FROM `ano` WHERE firma = {$single_firm->id}")
                 ->getResult();
 
-            #Fontes de anos
-            $single_firm->years = $this->db
-                ->query("SELECT * FROM `ano` WHERE firma = {$single_firm->id}")
+            #Patrimonies
+            $single_firm->patrimonies = $this->db
+                ->query("SELECT * FROM `patrimonio` WHERE firma = {$single_firm->id}")
                 ->getResult();
 
             #Tipo documentos
@@ -38,7 +38,7 @@ class Home extends ResourceController
             
             ## Get each document
             $final_all_ducument_pypes = array();
-            foreach($single_firm->fonte_receitas as $single_document_type){
+            foreach($all_ducument_pypes as $single_document_type){
                 $single_document_type->documents = $this->db
                     ->query("SELECT * FROM `documento` WHERE tipo = {$single_document_type->id}")
                     ->getResult();
@@ -46,16 +46,28 @@ class Home extends ResourceController
             }
             $single_firm->document_types = $final_all_ducument_pypes;
 
-
             #Fontes de receita
             $single_firm->fonte_receitas = $this->db
                 ->query("SELECT * FROM `fontesreceita` WHERE firma = {$single_firm->id}")
                 ->getResult();
 
+
             #Centros de custo
-            $single_firm->centro_custos = $this->db
-            ->query("SELECT * FROM `centrocustos` WHERE firma = {$single_firm->id}")
-            ->getResult();
+            $all_centro_custos = $this->db
+                ->query("SELECT * FROM `centrocustos` WHERE firma = {$single_firm->id}")
+                ->getResult();
+
+            ##Get each centro de custo
+            $final_all_centro_custos = array();
+            foreach ($all_centro_custos as $single_centro_custo) {
+                $single_centro_custo->expenses = $this->db
+                    ->query("SELECT * FROM `despesa` WHERE centrocusto = {$single_centro_custo->id}")
+                    ->getResult();
+
+                array_push($final_all_centro_custos, $single_centro_custo);
+            }
+            $single_firm->centro_custos = $final_all_centro_custos;
+
 
             #Apartamentos e moradores
             $single_firm->apartamentos = $this->db
@@ -71,13 +83,50 @@ class Home extends ResourceController
 
                     #Viatuas
                     $single_apt->viatuas = $this->db
-                    ->query("SELECT * FROM `carro` WHERE codigomorador = {$single_apt->id}")
-                    ->getResult();
+                        ->query("SELECT * FROM `carro` WHERE codigomorador = {$single_apt->id}")
+                        ->getResult();
 
                     #Empregados
                     $single_apt->empregados = $this->db
-                    ->query("SELECT * FROM `empregado` WHERE codigomorador = {$single_apt->id}")
-                    ->getResult();
+                        ->query("SELECT * FROM `empregado` WHERE codigomorador = {$single_apt->id}")
+                        ->getResult();
+
+                    #Pagamentos
+                    $all_payments = $this->db
+                        ->query("SELECT * FROM `pagamento` WHERE morador = {$single_apt->id}")
+                        ->getResult();
+
+                    ##Get each payment
+                    $final_all_payments = array();
+                    foreach ($all_payments as $single_payment) {
+                        #payment_items
+                        $single_payment->items = $this->db
+                            ->query("SELECT * FROM `itempagamento` WHERE pagamento = {$single_payment->id}")
+                            ->getResult();
+
+                        #pagamento_recibos
+                        $single_payment->normal_recibos = $this->db
+                            ->query("SELECT * FROM `recibo_pagamento` WHERE pagamento = {$single_payment->id}")
+                            ->getResult();
+
+                        #pagamento_recibos
+                        $single_payment->mobile_recibos = $this->db
+                            ->query("SELECT * FROM `recibo` WHERE id_pagamento = {$single_payment->id}")
+                            ->getResult();
+
+                        array_push($final_all_payments, $single_payment);
+                    }
+                    $single_apt->payments = $final_all_payments;
+
+                    #Occurrences
+                    $single_apt->occurrences = $this->db
+                        ->query("SELECT * FROM `ocorrencia` WHERE morador = {$single_apt->id}")
+                        ->getResult();
+
+                    #Visits
+                    $single_apt->visits = $this->db
+                        ->query("SELECT * FROM `visitante` WHERE moradorvisitado = {$single_apt->id}")
+                        ->getResult();
                 }
             
             array_push($final, $single_firm); 
