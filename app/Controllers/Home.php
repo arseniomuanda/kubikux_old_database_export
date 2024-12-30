@@ -14,12 +14,18 @@ class Home extends ResourceController
         $this->db = Database::connect();
     }
 
-    public function index()
+    public function index($firma = 6)
     {
-        $restult = $this->db->query("select * from firma where id = 2")->getResult();
-        $final = array();
+        if(is_null($firma)){
+            return $this->respond([
+                "error" => true,
+                "message" => 'Firma não encontrada!'
+            ]);
+        }
+
+        $single_firm = $this->db->query("select * from firma where id = $firma")->getRow();
         
-        foreach($restult as $single_firm){
+        
             #Years
             $single_firm->years = $this->db
                 ->query("SELECT * FROM `ano` WHERE firma = {$single_firm->id}")
@@ -129,12 +135,13 @@ class Home extends ResourceController
                         ->getResult();
                 }
             
-            array_push($final, $single_firm); 
-        }
+            $single_firm; 
+        
 
-        return $this->respond($final);
-        return view('welcome_message', [
-            'firmas' => $final
-        ]);
+        // Configuração para baixar JSON
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="firmas.json"');
+        echo json_encode($single_firm, JSON_PRETTY_PRINT);
+        exit;
     }
 }
